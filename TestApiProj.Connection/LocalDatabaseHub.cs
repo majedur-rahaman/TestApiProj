@@ -13,7 +13,7 @@ namespace TestApiProj.Connection
     {
         private static bool IsStoreProcedureNameCorrect(string storeProcedureName)
         {
-            if (String.IsNullOrEmpty(storeProcedureName))
+            if (string.IsNullOrEmpty(storeProcedureName))
             {
                 return false;
             }
@@ -25,6 +25,56 @@ namespace TestApiProj.Connection
             }
 
             return Regex.IsMatch(storeProcedureName, @"^[A-Za-z0-9]+[\.]{1}[A-Za-z0-9]+$");
+        }
+
+        public IEnumerable<TResult> Query<TResult>(string storedProcedureName)
+        {
+            if (!IsStoreProcedureNameCorrect(storedProcedureName))
+            {
+                return null;
+            }
+
+            using (var connection = LocalConnection())
+            {
+                var result = connection.Query<TResult>(
+                    sql: storedProcedureName, commandTimeout: null, commandType: CommandType.StoredProcedure);
+                CloseConnection(connection);
+                return result;
+            }
+        }
+
+        public IEnumerable<TResult> Query<TResult>(string storedProcedureName, DynamicParameters parameters)
+        {
+            if (!IsStoreProcedureNameCorrect(storedProcedureName))
+            {
+                return null;
+            }
+
+            using (var connection = LocalConnection())
+            {
+                var result = connection.Query<TResult>(
+                    sql: storedProcedureName, param: parameters, commandTimeout: null,
+                    commandType: CommandType.StoredProcedure);
+                CloseConnection(connection);
+                return result;
+            }
+        }
+
+        public IEnumerable<TResult> Query<TModel, TResult>(string storedProcedureName, TModel model)
+        {
+            if (!IsStoreProcedureNameCorrect(storedProcedureName))
+            {
+                return null;
+            }
+
+            using (var connection = LocalConnection())
+            {
+                var result = connection.Query<TResult>(
+                        sql: storedProcedureName, param: model, commandTimeout: null,
+                        commandType: CommandType.StoredProcedure);
+                CloseConnection(connection);
+                return result;
+            }
         }
 
         public Task<IEnumerable<TResult>> QueryAsync<TResult>(string storedProcedureName, DynamicParameters parameters)

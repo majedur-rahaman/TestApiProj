@@ -3,10 +3,14 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Runtime.Serialization.Json;
 using System.Threading.Tasks;
+using System.Web;
 using System.Web.Http;
+using System.Web.Http.Results;
 using TestApiProj.DataAccessLayer;
 using TestApiProj.Models;
+
 
 namespace TestApiProj.Controllers
 {
@@ -16,12 +20,12 @@ namespace TestApiProj.Controllers
         private bool isLiveConnection = true;
 
 
-        [HttpPost, Route("GetCrazyDeals/{index}/{count}")]
+        [HttpGet, Route("GetCrazyDeals/{index}/{count}")]
         public async Task<IHttpActionResult> GetCrazyDeals(int index, int count)
         {
             try
             {
-                var resultData = await new CrazyDeals(isLiveConnection).GetCrazyDeals<CrazyDealsModel>(index, count);
+                var resultData = new CrazyDeals(isLiveConnection: false).GetCrazyDeals<CrazyDealsModel>(index, count);
 
                 if (resultData == null)
                 {

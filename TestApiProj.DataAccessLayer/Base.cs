@@ -8,7 +8,7 @@ using TestApiProj.Connection;
 namespace TestApiProj.DataAccessLayer
 {
 
-  public class Base
+  public abstract class Base
   {
       protected IDatabaseHub DatabaseHub;
       private bool _isLiveConnection;
@@ -17,14 +17,14 @@ namespace TestApiProj.DataAccessLayer
       {
           set
           {
-              //if (value)
-              //{
-                  DatabaseHub = new LiveDatabaseHub(value);
-              //}
-              //else
-              //{
-              //    DatabaseHub = new LocalDatabaseHub();
-              //}
+              if (value)
+              {
+                  DatabaseHub = new LiveDatabaseHub();
+              }
+              else
+              {
+                  DatabaseHub = new LocalDatabaseHub();
+              }
 
               _isLiveConnection = value;
           }

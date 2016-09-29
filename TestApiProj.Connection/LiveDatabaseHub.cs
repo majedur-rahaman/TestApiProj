@@ -9,59 +9,103 @@ using Dapper;
 
 namespace TestApiProj.Connection
 {
-    
-  public class LiveDatabaseHub: Connection, IDatabaseHub
-  {
 
-      private readonly bool _connectionSet;
-      public LiveDatabaseHub(bool connectionHub)
-      {
-          this._connectionSet = connectionHub;
-      }
-      private static bool IsStoreProcedureNameCorrect(string storeProcedureName)
-      {
-          if (string.IsNullOrEmpty(storeProcedureName))
-          {
-              return false;
-          }
+    public class LiveDatabaseHub : Connection, IDatabaseHub
+    {
+        private static bool IsStoreProcedureNameCorrect(string storeProcedureName)
+        {
+            if (string.IsNullOrEmpty(storeProcedureName))
+            {
+                return false;
+            }
 
-          if (storeProcedureName.StartsWith("[") && storeProcedureName.EndsWith("]"))
-          {
-              return Regex.IsMatch(storeProcedureName,
-                  @"^[\[]{1}[A-Za-z0-9_]+[\]]{1}[\.]{1}[\[]{1}[A-Za-z0-9_]+[\]]{1}$");
-          }
+            if (storeProcedureName.StartsWith("[") && storeProcedureName.EndsWith("]"))
+            {
+                return Regex.IsMatch(storeProcedureName,
+                    @"^[\[]{1}[A-Za-z0-9_]+[\]]{1}[\.]{1}[\[]{1}[A-Za-z0-9_]+[\]]{1}$");
+            }
 
-          return Regex.IsMatch(storeProcedureName, @"^[A-Za-z0-9]+[\.]{1}[A-Za-z0-9]+$");
-      }
+            return Regex.IsMatch(storeProcedureName, @"^[A-Za-z0-9]+[\.]{1}[A-Za-z0-9]+$");
+        }
 
-      public Task<IEnumerable<TResult>> QueryAsync<TResult>(string storedProcedureName, DynamicParameters parameters)
-      {
-          if (!IsStoreProcedureNameCorrect(storedProcedureName))
-          {
-              return null;
-          }
+        public IEnumerable<TResult> Query<TResult>(string storedProcedureName)
+        {
+            if (!IsStoreProcedureNameCorrect(storedProcedureName))
+            {
+                return null;
+            }
 
-          using (var connection = LiveConnection(_connectionSet))
-          {
-              try
-              {
-                  return connection.QueryAsync<TResult>(
-                      sql: storedProcedureName,
-                      param:parameters,
-                      commandTimeout: null,
-                      commandType: CommandType.StoredProcedure);
-              }
-              catch (Exception exception)
-              {
+            using (var connection = LiveConnection())
+            {
+                var result = connection.Query<TResult>(
+                    sql: storedProcedureName, commandTimeout: null, commandType: CommandType.StoredProcedure);
+                CloseConnection(connection);
+                return result;
+            }
+        }
 
-                  throw exception;
-              }
-              finally
-              {
-                  CloseConnection(connection);
-              }
+        public IEnumerable<TResult> Query<TResult>(string storedProcedureName, DynamicParameters parameters)
+        {
+            if (!IsStoreProcedureNameCorrect(storedProcedureName))
+            {
+                return null;
+            }
 
-          }
-      }
+            using (var connection = LiveConnection())
+            {
+                var result = connection.Query<TResult>(
+                    sql: storedProcedureName, param: parameters, commandTimeout: null, 
+                    commandType: CommandType.StoredProcedure);
+                CloseConnection(connection);
+                return result;
+            }
+        }
+
+        public IEnumerable<TResult> Query<TModel, TResult>(string storedProcedureName, TModel model)
+        {
+            if (!IsStoreProcedureNameCorrect(storedProcedureName))
+            {
+                return null;
+            }
+
+            using (var connection = LiveConnection())
+            {
+                var result = connection.Query<TResult>(
+                        sql: storedProcedureName, param: model, commandTimeout: null,
+                        commandType: CommandType.StoredProcedure);
+                CloseConnection(connection);
+                return result;
+            }
+        }
+
+        public async Task<IEnumerable<TResult>> QueryAsync<TResult>(string storedProcedureName, DynamicParameters parameters)
+        {
+            if (!IsStoreProcedureNameCorrect(storedProcedureName))
+            {
+                return null;
+            }
+
+            using (var connection = LiveConnection())
+            {
+                try
+                {
+                    return await connection.QueryAsync<TResult>(
+                        sql: storedProcedureName,
+                        param: parameters,
+                        commandTimeout: null,
+                        commandType: CommandType.StoredProcedure);
+                }
+                catch (Exception exception)
+                {
+
+                    throw exception;
+                }
+                finally
+                {
+                    CloseConnection(connection);
+                }
+
+            }
+        }
     }
 }
